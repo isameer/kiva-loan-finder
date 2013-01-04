@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function() 
+			{
+				$('#submit').click(findLoans);
+				console.log($('#submit'));
+			});
+
+			function showSpinner()
+			{
+				$('#loadingImage').show();
+			}
+
+			function hideSpinner()
+			{
+
+				$('#loadingImage').hide();
+			}
+
+			function findLoans()
+{
+	$('#loans').children('.loan').remove();
+	showSpinner();
+	var loans = 1;
+	var partner_min_rating = 3.0
+		var partner_max_rating = 5.0
+
+		var partner_min_delinquency_rate = 0.0
+		var partner_max_delinquency_rate = 5.0
+
+		var partner_min_default_rate = 0.0
+		var partner_max_default_rate = 1.0
+		valid_partners = new Array()
+		set_of_all_countries = {};
+
+	partners = getJSONSync('http://api.kivaws.org/v1/partners.json')
+		for (var i = 0; i <  partners['partners'].length; i++)
+		{
+			var partner = partners['partners'][i]
+
+				//console.log(partner['id'] + '\t' + partner['rating'] + '\t' + partner['delinquency_rate'] + '\t' + partner['default_rate'])
+				if (partner['status'] != 'closed' && partner['rating'] != 'Not Rated' && partner['rating'] >= partner_min_rating && partner['rating'] <= partner_max_rating && partner['delinquency_rate'] >= partner_min_delinquency_rate && partner['delinquency_rate'] <= partner_max_delinquency_rate && partner['default_rate'] >= partner_min_default_rate && partner['default_rate'] <= partner_max_default_rate)
+				{
+					valid_partners.push(partner['id'])
+						for (var j = 0; j < partner['countries'].length; j++)
+						{
+							country = partner['countries'][j]
+								set_of_all_countries[country['iso_code']] = true
+						}
+				}
+		}
+
+	var pagenum = 1
+		var max_pages = 1
+		var set_of_loaned_countries = {}
+	set_of_loaned_countries['SN'] = true
+
+		while (pagenum <= max_pages)
+		{
+			loans = getJSONSync('http://api.kivaws.org/v1/lenders/' + $('#lenderID').val() + '/loans.json?page=' + pagenum)
+				max_pages = loans['paging']['pages']
+				for (var i = 0; i < loans['loans'].length; i++)
+				{
+					loan = loans['loans'][i];
+					//console.log(loan['status'] + '\t' +  loan['location']['country_code'])
+					if (loan['status'] != 'paid')
+					{
+						set_of_loaned_countries[loan['location']['country_code']] = true
+					}
+				}
+
+			pagenum++
+		}
+
+	var all_countries = Array()
+		for(var x in set_of_all_countries)
+		{
+			all_countries.push(x)
+		}
+	//console.log('All countries ' + all_countries.join(','))
+	var loaned_countries = Array()
+		for(var x in set_of_loaned_countries)
+		{
+			loaned_countries.push(x)
+		}
+
+	//console.log('Countries with active loans : ' + loaned_countries.join(','))
+
+	countries_to_loan = Array()
+		for(var x in set_of_all_countries)
+		{
+			if(!(x in set_of_loaned_countries))
+			{
+				countries_to_loan.push(x)
+			}
+		}
+	countries = countries_to_loan.join(',')
+		//console.log('Countries to loan : ' + countries)
+
+		link = 'http://www.kiva.org/lend#/?&sortBy=repaymentTerm&countries[]=' + countries + '&partner_default_min=0&partner_default_max=2.3&partner_risk_include_nonrated=&partner_risk_rating_min=3&partner_risk_rating_max=5&partner_arrears_min=0&partner_arrears_max=5'
+		//console.log(link)
+
+		pagenum = 1
+		max_pages = 1
+
+		search_url = 'http://api.kivaws.org/v1/loans/search.json?status=fundraising&sort_by=repayment_term&country_code=' + countries + '&partner=' + valid_partners.join(',')
+		//console.log(search_url)
+
+		var loan_ids_of_interest = Array()
+		while (pagenum <= max_pages)
+		{
+			data = getJSONSync(search_url + '&page=' + pagenum)
+				max_pages = data['paging']['pages']
+				//console.log(data)
+				for(var i = 0; i < data['loans'].length; i++)
+				{
+					loan_ids_of_interest.push(data['loans'][i]['id'])
+				}
+
+			pagenum++
+		}
+
+	//console.log('all loans: ' + loan_ids_of_interest)
+
+	var candidate_loans = Array()
+		var abort = false
+		for(var i = 0; ((i < loan_ids_of_interest.length) && !abort); i += 10)
+		{
+			var loans_str  = loan_ids_of_interest.slice(i , Math.min(i + 10 , loan_ids_of_interest.length)).join(',')
+				//console.log(i)
+				//console.log(loans_str)
+				var data = getJSONSync('http://api.kivaws.org/v1/loans/' + loans_str + '.json')
+				//console.log(data);
+				var basket = new Array()
+				for(var j = 0; j < data['loans'].length; j++)
+				{
+					var loan = data['loans'][j]
+						var term = getLoanTerm(loan)
+						var numRepayments = getNumberOfRepayments(loan)
+						console.log(loan['id'] + '\t' + term + '\t' + numRepayments)
+						if ( term <= parseInt($('#maxTerm').val())  && (term - numRepayments) <= 2)
+						{
+							candidate_loans.push(loan)
+								var l = new Object()
+								l['id'] = loan['id']
+								l['amount'] = 25
+								//	basket.push(l)
+						}
+						else
+						{
+							abort = true
+						}
+				}
+
+			//console.log(basket)
+			//console.log(JSON.stringify(basket)) 
+			$('#loans_input').attr('value' , JSON.stringify(basket));
+		}
+
+	hideSpinner();
+	if(candidate_loans.length == 0)
+	{
+		$('#loans').append($('<span></span>').html('No loans found'));
+	}
+
+	//console.log(candidate_loans)
+	candidate_loans.sort(compareLoans)
+		//console.log(candidate_loans)
+
+	for(var i = 0; i < candidate_loans.length; i++)
+	{
+		loan = candidate_loans[i];
+		$('#loans').append(getHTMLForLoan(loan))
+	}
+}
+
+function compareLoans(l1 , l2)
+{
+	t1 = getLoanTerm(l1);
+	t2 = getLoanTerm(l2);
+	return (t1 - t2) + (t1 == t2)*(getTimeToExpiry(l1) - getTimeToExpiry(l2))
+}
+
+function getTimeToExpiry(loan)
+{
+	return (1  + Math.floor(Date.parse(loan['planned_expiration_date']) - (new Date()))/(1000*86400*30))
+}
+
+function getLoanTerm(loan)
+{
+	return (1  + Math.floor((new Date(Date.parse(loan['terms']['scheduled_payments'][loan['terms']['scheduled_payments'].length - 1]['due_date'])) - new Date())/(1000*86400*30)))
+}
+
+function getNumberOfRepayments(loan)
+{
+	return loan['terms']['scheduled_payments'].length;
+}
+
+
+function getJSONSync(url)
+{
+	return $.parseJSON($.ajax({url :  url, async : false }).responseText)
+}
+function getHTMLForLoan(loan)
+{
+	var term = getLoanTerm(loan)
+		var numRepayments = getNumberOfRepayments(loan)
+		return '<div class="loan">' + '<p> <a target="_blank" href="http://www.kiva.org/lend/' + loan['id'] + '">' + loan['name'] + '</a>' + ' - ' + term + ' months - ' + numRepayments + ' repayments - ' + loan['use'] + ' - ' + loan['location']['country'] +  '</p>' + getFormFormForAddingLoanToBasket(loan['id']) + '<hr/></div>'
+}
+
+function getFormFormForAddingLoanToBasket(loan_id)
+{
+	var o = new Object()
+		o['id'] = loan_id
+		o['amount'] = 25
+		var a = new Array()
+		a.push(o)
+		return "<form method='POST' target='_blank' action='http://www.kiva.org/basket/set'><input name='loans' value='" + JSON.stringify(a) + "' type='hidden' /><input name='donation' value='0' type='hidden' /><input type='submit' value = 'loan' /></form>"
+
+
+}
+
+
+</script>
+	</head>
+	<body>
+		<div id="params">
+			<label for="maxTerm">Max Loan Term</label> <input name="maxTerm" min="1" id="maxTerm" value="12" type="number">
+			<label for="lenderID">Lender ID</label> <input name="lenderID" id="lenderID" value="isameer" type="text">
+			<input id="submit" value="Update" type="button">
+		</div>
+		<div id="loans">
+			<img id="loadingImage" src="images/Ajax-loader.gif" style="display:none;">
+		</div>
+
+		<!--
+		<form method="POST" action="http://www.kiva.org/basket/set" id = 'basket_form'>
+			<input id = 'loans_input' name="loans" value='' type="text" />
+			<input name="donation" value="0" type='text' />
+			<input type='submit' value = 'loan' />
+		</form>
+		-->
+
+
+	
+</body></html>
