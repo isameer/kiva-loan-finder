@@ -32,7 +32,7 @@
 		var partner_max_delinquency_rate = 5.0
 
 		var partner_min_default_rate = 0.0
-		var partner_max_default_rate = 1.0
+		var partner_max_default_rate = $("#partner_max_default_rate").val(;)
 		valid_partners = new Array()
 		set_of_all_countries = {};
 
@@ -244,8 +244,9 @@ function getFormFormForAddingLoanToBasket(loan_id)
 	</head>
 	<body>
 		<div id="params">
-			<label for="maxTerm">Max Loan Term</label> <input name="maxTerm" min="1" id="maxTerm" value="12" type="number">
-			<label for="lenderID">Lender ID</label> <input name="lenderID" id="lenderID" value="isameer" type="text">
+			<label for="maxTerm">Max Loan Term</label> <input name="maxTerm" min="1" id="maxTerm" value="12" type="number" />
+			<label for="lenderID">Lender ID</label> <input name="lenderID" id="lenderID" value="isameer" type="text" />
+			<label for = "partner_max_default_rate">Max default rate</label><input name="partner_max_default_rate" id="partner_max_default_rate" type="number" min="0" max="10" value="1"/>
 			<input id="submit" value="Update" type="button">
 		</div>
 		<div id="loans">
@@ -257,7 +258,7 @@ function getFormFormForAddingLoanToBasket(loan_id)
 			<input id = 'loans_input' name="loans" value='' type="text" />
 			<input name="donation" value="0" type='text' />
 			<input type='submit' value = 'loan' />
-		</form>
+		</from>
 		-->
 
 
