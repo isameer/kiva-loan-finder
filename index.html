@@ -36,7 +36,7 @@
 		valid_partners = new Array()
 		set_of_all_countries = {};
 
-	partners = getJSONSync('http://api.kivaws.org/v1/partners.json')
+	partners = getJSONSync('http://api.kivaws.org/v1/partners.json?app_id=kiva.loan-finder')
 		for (var i = 0; i <  partners['partners'].length; i++)
 		{
 			var partner = partners['partners'][i]
@@ -61,7 +61,7 @@
 
 		while (pagenum <= max_pages)
 		{
-			loans = getJSONSync('http://api.kivaws.org/v1/lenders/' + $('#lenderID').val() + '/loans.json?page=' + pagenum)
+			loans = getJSONSync('http://api.kivaws.org/v1/lenders/' + $('#lenderID').val() + '/loans.json?app_id=kiva.loan-finder&page=' + pagenum)
 				max_pages = loans['paging']['pages']
 				for (var i = 0; i < loans['loans'].length; i++)
 				{
@@ -107,13 +107,13 @@
 		}
 	countries = countries_to_loan.join(',')
 
-		link = 'http://www.kiva.org/lend#/?&sortBy=repaymentTerm&countries[]=' + countries + '&partner_default_min=0&partner_default_max=2.3&partner_risk_include_nonrated=&partner_risk_rating_min=3&partner_risk_rating_max=5&partner_arrears_min=0&partner_arrears_max=5'
+		link = 'http://www.kiva.org/lend#/?app_id=kiva.loan-finder&sortBy=repaymentTerm&countries[]=' + countries + '&partner_default_min=0&partner_default_max=2.3&partner_risk_include_nonrated=&partner_risk_rating_min=3&partner_risk_rating_max=5&partner_arrears_min=0&partner_arrears_max=5'
 
 		pagenum = 1
 		max_pages = 1
 
-		//search_url = 'http://api.kivaws.org/v1/loans/search.json?status=fundraising&sort_by=repayment_term&country_code=' + countries + '&partner=' + valid_partners.join(',')
-		search_url = 'http://api.kivaws.org/v1/loans/search.json?status=fundraising&sort_by=repayment_term&partner=' + valid_partners.join(',')
+		//search_url = 'http://api.kivaws.org/v1/loans/search.json?app_id=kiva.loan-finder&status=fundraising&sort_by=repayment_term&country_code=' + countries + '&partner=' + valid_partners.join(',')
+		search_url = 'http://api.kivaws.org/v1/loans/search.json?app_id=kiva.loan-finder&status=fundraising&sort_by=repayment_term&partner=' + valid_partners.join(',')
 
 		var loan_ids_of_interest = Array()
 		while (pagenum <= max_pages)
@@ -137,7 +137,7 @@
 		for(var i = 0; ((i < loan_ids_of_interest.length) && !abort); i += 10)
 		{
 			var loans_str  = loan_ids_of_interest.slice(i , Math.min(i + 10 , loan_ids_of_interest.length)).join(',')
-				var data = getJSONSync('http://api.kivaws.org/v1/loans/' + loans_str + '.json')
+				var data = getJSONSync('http://api.kivaws.org/v1/loans/' + loans_str + '.json?app_id=kiva.loan-finder')
 				var basket = new Array()
 				for(var j = 0; j < data['loans'].length; j++)
 				{
