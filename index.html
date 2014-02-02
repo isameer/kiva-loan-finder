@@ -145,13 +145,15 @@
 						var term = getLoanTerm(loan)
 						var numRepayments = getNumberOfRepayments(loan)
 						console.log(loan['id'] + '\t' + term + '\t' + numRepayments)
-						if ( term <= parseInt($('#maxTerm').val())  && (term - numRepayments) <= 2)
+						if ( term <= parseInt($('#maxTerm').val()))
 						{
-							candidate_loans.push(loan)
+							if ((term - numRepayments) <= 2) {
+								candidate_loans.push(loan)
 								var l = new Object()
 								l['id'] = loan['id']
 								l['amount'] = 25
 								//	basket.push(l)
+							}
 						}
 						else
 						{
