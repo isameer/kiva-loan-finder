@@ -56,7 +56,7 @@
 		var max_pages = 1
 		var set_of_loaned_countries = {}
 	set_of_loaned_countries['SN'] = true
-	num_active_loans_to_country = {}
+	num_loans_to_country = {}
 	var loans_made = {}
 
 		while (pagenum <= max_pages)
@@ -67,23 +67,21 @@
 				{
 					loan = loans['loans'][i];
 					loans_made[loan['id']] = true
-					if (loan['status'] != 'paid')
-					{
-						var country_code = loan['location']['country_code'] 
-						set_of_loaned_countries[country_code] = true
-						if (!(country_code in num_active_loans_to_country))
-						{
-							num_active_loans_to_country[country_code] = 0
-						}
 
-						num_active_loans_to_country[country_code] += 1
+					var country_code = loan['location']['country_code'] 
+					set_of_loaned_countries[country_code] = true
+					if (!(country_code in num_loans_to_country))
+					{
+						num_loans_to_country[country_code] = 0
 					}
+					num_loans_to_country[country_code] += 1
+
 				}
 
 			pagenum++
 		}
 
-		console.log(num_active_loans_to_country)
+		console.log(num_loans_to_country)
 
 	var all_countries = Array()
 		for(var x in set_of_all_countries)
@@ -180,11 +178,11 @@
 }
 
 
-function getNumActiveLoansToCountry(country_code)
+function getNumLoansToCountry(country_code)
 {
-	if (country_code in num_active_loans_to_country)
+	if (country_code in num_loans_to_country)
 	{
-		return num_active_loans_to_country[country_code];
+		return num_loans_to_country[country_code];
 	}
 	else
 	{
@@ -195,8 +193,8 @@ function getNumActiveLoansToCountry(country_code)
 function compareLoans(l1 , l2)
 {
 
-	num_loans1 = getNumActiveLoansToCountry(l1['location']['country_code'])
-	num_loans2 = getNumActiveLoansToCountry(l2['location']['country_code'])
+	num_loans1 = getNumLoansToCountry(l1['location']['country_code'])
+	num_loans2 = getNumLoansToCountry(l2['location']['country_code'])
 	t1 = getLoanTerm(l1);
 	t2 = getLoanTerm(l2);
 	return (num_loans1 - num_loans2) + (num_loans1 == num_loans2)*((t1 - t2) + (t1 == t2)*(getTimeToExpiry(l1) - getTimeToExpiry(l2)))
@@ -226,7 +224,7 @@ function getHTMLForLoan(loan)
 {
 	var term = getLoanTerm(loan)
 		var numRepayments = getNumberOfRepayments(loan)
-		return '<div class="loan">' + '<p> <a target="_blank" href="http://www.kiva.org/lend/' + loan['id'] + '">' + loan['name'] + '</a>' + ' - ' + term + ' months - ' + numRepayments + ' repayments - ' + loan['use'] + ' - ' + loan['location']['country'] + ' - ' + getNumActiveLoansToCountry(loan['location']['country_code']) + ' loans ' + '</p>' + getFormFormForAddingLoanToBasket(loan['id']) + '<hr/></div>'
+		return '<div class="loan">' + '<p> <a target="_blank" href="http://www.kiva.org/lend/' + loan['id'] + '">' + loan['name'] + '</a>' + ' - ' + term + ' months - ' + numRepayments + ' repayments - ' + loan['use'] + ' - ' + loan['location']['country'] + ' - ' + getNumLoansToCountry(loan['location']['country_code']) + ' loans ' + '</p>' + getFormFormForAddingLoanToBasket(loan['id']) + '<hr/></div>'
 }
 
 function getFormFormForAddingLoanToBasket(loan_id)
